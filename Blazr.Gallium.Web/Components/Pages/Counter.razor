@@ -21,7 +21,7 @@
     private void IncrementCount()
     {
         currentCount++;
-        MessageBus.Publish(new CounterMessage() { Value = currentCount });
+        MessageBus.Publish<CounterMessage>(new CounterMessage() { Value = currentCount });
     }
 
     public void Dispose()

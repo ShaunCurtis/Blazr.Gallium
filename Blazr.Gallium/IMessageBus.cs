@@ -8,13 +8,9 @@ namespace Blazr.Gallium;
 
 public interface IMessageBus
 {
-    public void Publish<T>(T message) where T : IMessage;
+    public void Publish<TMessage>(object? message);
 
-    public void Subscribe<T>(Action<object> callback) where T : IMessage;
+    public void Subscribe<TMessage>(Action<object> callback);
 
-    public void UnSubscribe<T>(Action<object> callback) where T : IMessage;
-
-    //internal void ClearAllSubscriptions();
-    //internal void ClearSubscriptions<T>() where T : IMessage;
-
+    public void UnSubscribe<TMessage>(Action<object> callback);
 }
