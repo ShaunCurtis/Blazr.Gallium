@@ -3,6 +3,7 @@
 /// License: Use And Donate
 /// If you use it, donate something to a charity somewhere
 /// ============================================================
+using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 
 namespace Blazr.Gallium;
@@ -16,10 +17,21 @@ public class MessageBus : IMessageBus
 
     public MessageBus()
     {
-        _queue = new ActionBlock<Handler>((handler) =>
+        _queue = new ActionBlock<Handler>(BusHandler);
+    }
+
+    private Task BusHandler(Handler handler)
+    {
+        try
         {
             handler.Subscription.SubscriptionAction.Invoke(handler.Message);
-        });
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError($"The subscription raised an Exception. Exception message: {ex.Message}");
+        }
+
+        return Task.CompletedTask;  
     }
 
     public void Subscribe<TMessage>(Action<object> callback)
