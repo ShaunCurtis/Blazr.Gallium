@@ -3,35 +3,25 @@
 /// License: Use And Donate
 /// If you use it, donate something to a charity somewhere
 /// ============================================================
-using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 
 namespace Blazr.Gallium;
 
 public class MessageBus : IMessageBus
 {
-    private readonly record struct Handler(Subscription Subscription, object Message);
-
     private readonly List<Subscription> _subscriptions = new();
-    private ActionBlock<Handler> _queue;
+    private readonly ActionBlock<Message> _queue;
 
     public MessageBus()
     {
-        _queue = new ActionBlock<Handler>(BusHandler);
+        _queue = new(PublishMessage);
     }
 
-    private Task BusHandler(Handler handler)
-    {
-        try
-        {
-            handler.Subscription.SubscriptionAction.Invoke(handler.Message);
-        }
-        catch (Exception ex)
-        {
-            Trace.TraceError($"The subscription raised an Exception. Exception message: {ex.Message}");
-        }
+    private readonly record struct Message(Subscription Subscription, object Value);
 
-        return Task.CompletedTask;  
+    private void PublishMessage(Message message)
+    {
+        message.Subscription.SubscriptionAction.Invoke(message.Value);
     }
 
     public void Subscribe<TMessage>(Action<object> callback)
@@ -46,15 +36,13 @@ public class MessageBus : IMessageBus
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        //List<Subscription> handlers;
-
-        var handlers = _subscriptions.Where(item => item.SubscriptionType == typeof(TTarget));
+        List<Subscription> handlers;
 
         lock (_subscriptions)
-        {
-            foreach (var handler in handlers)
-                _queue.Post(new(handler, message));
-        }
+            handlers = _subscriptions.Where(item => item.SubscriptionType == typeof(TTarget)).ToList();
+
+        foreach (var handler in handlers)
+            _queue.Post(new(handler, message));
     }
 
     public void UnSubscribe<TMessage>(Action<object> callback)

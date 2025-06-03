@@ -1,4 +1,5 @@
-﻿@inject IMessageBus MessageBus
+﻿@using System.Diagnostics
+@inject IMessageBus MessageBus
 
 <h3>CounterDisplay - @_message.Value </h3>
 
@@ -12,10 +13,19 @@
 
     private void Update(object value)
     {
-        if (value is CounterMessage message)
-            _message = message;
+        try
+        {
+            Trace.TraceInformation($"CounterDisplay Called - Thread {Thread.CurrentThread.ManagedThreadId}");
+            if (value is CounterMessage message)
+                _message = message;
 
-        this.InvokeAsync(StateHasChanged);
+            this.InvokeAsync(StateHasChanged);
+            Trace.TraceInformation($"CounterDisplay Completed - Thread {Thread.CurrentThread.ManagedThreadId}");
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError($"The message handler raised an Exception. Exception message: {ex.Message}");
+        }
     }
 
 
